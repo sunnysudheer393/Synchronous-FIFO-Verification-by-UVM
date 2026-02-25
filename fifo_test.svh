@@ -30,7 +30,7 @@ class fifo_test extends uvm_test;
     //run_phase is a task(consumes simulation time)
     task run_phase(uvm_phase phase);
         //we can create objects for the sequence here
-        fifo_seq = fifo_sequence::type_id::create("fifo_seq", this);
+        fifo_seq = fifo_sequence::type_id::create("fifo_seq");
 
         //to know what is happening we use objections before and after randomizartions
         phase.raise_objection(this);//all run phases called parallely
