@@ -20,13 +20,12 @@ class fifo_sequence extends uvm_sequence #(fifo_seq_item);//we'll have seq item 
     //every sequence has body task and called start method in test class
 
     virtual task body();
-        repeat(10) begin
+      this.set_response_queue_depth(0);
+      repeat(10) begin
             req = fifo_seq_item::type_id::create("req");
-            //wait for driver to grant and then randomize
-            wait_for_grant();//start_item(req);
-            assert(req.randomize());//if randomization fails it'll report error
-            send_request(req);//no need if using the other two
-            wait_for_item_done();//finish_item(req);
+            start_item(req);
+            req.randomize();
+            finish_item(req);
         end
     endtask
 
@@ -60,10 +59,10 @@ class fifo_read_sequence extends uvm_sequence #(fifo_seq_item);
 
     virtual task body();
         repeat(10) begin
-            read = fifo_seq_item::type_id::create("read");
-            start_item(read);
-            read.randomize() with { read.wr_en==0; read.rd_en==1;};
-            finish_item(read);
+          req = fifo_seq_item::type_id::create("req");
+          start_item(req);
+          req.randomize() with { req.wr_en==0; req.rd_en==1;};
+          finish_item(req);
         end
     endtask
 endclass
@@ -78,12 +77,12 @@ class fifo_write_read_sequence extends uvm_sequence #(fifo_seq_item);
 
     virtual task body();
         repeat(10) begin
-            wr = fifo_seq_item::type_id::create("wr");
+          req = fifo_seq_item::type_id::create("req");
             /*start_item(war);
             war.randomize() with { war.wr_en==1; war.rd_en==1;};
             finish_item(war);*/
-            `uvm_do_with(wr,{wr.wr_en==1; wr.rd_en==0;})
-            `uvm_do_with(wr,{wr.wr_en==0; wr.rd_en==1;})
+          `uvm_do_with(req,{req.wr_en==1; req.rd_en==0;})
+          `uvm_do_with(req,{req.wr_en==0; req.rd_en==1;})
         end
     endtask
 endclass
@@ -100,18 +99,17 @@ class fifo_write_then_read_sequence extends uvm_sequence #(fifo_seq_item);
     endfunction
 
     virtual task body();
-        repeat(10) begin
-            wr_seq = fifo_seq_item::type_id::create("wr_seq");
-            rd_seq = fifo_seq_item::type_id::create("rd_seq");
-            /*start_item(war);
-            war.randomize() with { war.wr_en==1; war.rd_en==1;};
-            finish_item(war);
-            `uvm_do_with(war,{war.wr_en==1; war.rd_en==0;})
-            `uvm_do_with(war,{war.wr_en==0; war.rd_en==1;})*/
-            //SINCE WE NEED TO WRITE FIRST AND READ AFTER WRITING COMPLETELY
-            //WE'LL USE WRITE SEQ AND READ SEQ
-            `uvm_do(wr_seq)
-            `uvm_do(rd_seq)
+       // repeat(10) begin
+          	req = fifo_seq_item::type_id::create("req");
+            start_item(req);
+            assert(req.randomize() with {req.wr_en==1;req.rd_en==0;});
+            finish_item(req);
+
+            repeat(8) begin
+            req = fifo_seq_item::type_id::create("req");
+            start_item(req);
+            assert(req.randomize() with {req.wr_en==1;req.rd_en==1;});
+            finish_item(req);
         end
     endtask
 endclass
