@@ -1,18 +1,29 @@
-`timescale 1ns/100ps
+// Code your testbench here
+// or browse Examples
+//`timescale 1ns/100ps
 //include all the components here for UVM including interface
+//import "DPI-C" function int c_fifo_scoreboard(int wr_en, int rd_en, int data_in, int data_out, int full, int empty);
+
 import uvm_pkg::*;
 `include "uvm_macros.svh"
 
-`include "fifo_seq_item.sv"
-`include "fifo_sequencer.sv"
-`include "fifo_sequence.sv"
-`include "fifo_driver.sv"
-`include "fifo_interface.sv"
-`include "fifo_monitor.sv"
-`include "fifo_agent.sv"
-`include "fifo_scoreboard.sv"
-`include "fifo_env.sv"
-`include "fifo_test.sv"
+
+`include "fifo_seq_item.svh"
+`include "fifo_sequencer.svh"
+`include "fifo_sequence.svh"
+`include "fifo_monitor.svh"
+`include "fifo_driver.svh"
+`include "fifo_interface.svh"
+`include "fifo_agent.svh"
+`include "fifo_scoreboard.svh"
+`include "fifo_environment.svh"
+`include "fifo_test.svh"
+`include "fifo_read_test.svh"
+`include "fifo_write_read_test.svh"
+`include "fifo_write_test.svh"
+`include "fifo_write_then_read.svh"
+
+//`include "fifo_test.svh"
 //include other test files or sequences if there for fifo
 
 module fifo_testbench();
@@ -39,12 +50,12 @@ fifo_interface intf(clk,rst_n);
 //Instantiate the DUT and connect with ports of Interface
 
 synchronous_fifo dut(.data_in(intf.data_in), .clk(intf.clk),
-                    .rst_n(intf.rst_n), .wr_en(intf.wr_en), .rd_en(intf.rd_en),
+                     .rst(intf.rst_n), .wr_en(intf.wr_en), .rd_en(intf.rd_en),
                     .full(intf.full), .empty(intf.empty), .data_out(intf.data_out));
 
 //set the interface in configuration database
 initial begin
-    uvm_config_db #(virtual fifo_interface)::set(null,"*","vif",vif);
+  uvm_config_db#(virtual fifo_interface)::set(null,"*","vif",intf);
 end
 
 initial begin
@@ -57,25 +68,4 @@ initial begin
 end
 //start the run_test
 
-/*
-EDA Playground Link:
-https://edaplayground.com/x/FCVK
-*/
-//dump the values into vcd to view the waveform
-
-
 endmodule
-
-initial begin
-a = 0;
-b = 1;
-c = 0;
-d = 1;
-end
-
-always @(event) begin
-a <= b;
-b <= a;
-c = d;
-d = c;
-end
