@@ -1,4 +1,4 @@
-`define DRIV_IF vif.Driver.driver_cb //macro to get vif driver ports
+//`define DRIV_IF vif.Driver.driver_cb //macro to get vif driver ports
 class fifo_driver extends uvm_driver #(fifo_seq_item);
     `uvm_component_utils(fifo_driver)
     fifo_seq_item trans;
@@ -24,29 +24,17 @@ class fifo_driver extends uvm_driver #(fifo_seq_item);
         forever begin
             seq_item_port.get_next_item(trans);//tlm port to get next transaction item from sequencer
             //drive_task();
-            @(posedge vif.Driver.clk);
-            `DRIV_IF.wr_en <= trans.wr_en;
-            `DRIV_IF.rd_en <= trans.rd_en;
+            @(posedge vif.clk);
+              vif.wr_en <= trans.wr_en;
+              vif.rd_en <= trans.rd_en;
 
-            if(trans.wr_en) begin
-                `DRIV_IF.data_in <= trans.data_in;
-            end
+           // if(trans.wr_en) begin
+                vif.data_in <= trans.data_in;
+           // end
             //or connect seq item signals to drv.vif signals
-            seq_item_port.item_done(trans);
+            seq_item_port.item_done();
         end
+      
     endtask
-   /*
-    virtual task drive_task();
-        @(posedge vif.Driver.clk);
-        if(trans.wr_en) begin
-            `DRIV_IF.wr_en <= trans.wr_en;
-            `DRIV_IF.rd_en <= trans.rd_en;
-            `DRIV_IF.data_in <= trans.data_in;
-        end else if (trans.rd_en) begin
-            `DRIV_IF.wr_en <= trans.wr_en;
-            `DRIV_IF.rd_en <= trans.rd_en;
-        end
-
-
-    endtask */
+  
 endclass
