@@ -111,6 +111,88 @@ assert property (@(posedge clk) disable iff(rst) wr_en && !full |-> ##[1:$] (rd_
 //Bounded FIFO depth
 assert property (@(posedge clk) disable iff(rst) count <= 8);
 
+logic [7:0] d1_in, d2_in;
+logic sample_in_d1, sampled_in_d1, arbiter_window;
+logic sample_in_d2, sampled_in_d2;
+logic d1_out, d2_out, sampled_out_d1, sampled_out_d2;
+
+assume property (@(posedge clk) disable iff(rst) $stable(d1_in) && $stable(d2_in));
+assume property (@(posedge clk) disable iff(rst) d1_in != d2_in);
+//assume property (@(posedge clk) disable iff(rst) sampled_in_d2 |-> sampled_in_d1);
+assume property (@(posedge clk) disable iff(rst) !sampled_in_d1 |-> !sampled_in_d2);
+
+//assign arbiter_window = sampled_in_d1;
+
+assign sample_in_d1 = wr_en && (data_in == d1_in) && arbiter_window;
+
+always_ff @( posedge clk ) begin
+    if(rst) sampled_in_d1 <= 1'b0;
+    else sampled_in_d1 <= (sample_in_d1 || sampled_in_d1);
+end
+
+assign sample_in_d2 = wr_en && (data_in == d2_in);
+
+always_ff @( posedge clk ) begin
+    if(rst) sampled_in_d2 <= 1'b0;
+    else sampled_in_d2 <= (sample_in_d2 || sampled_in_d2);
+end
+
+
+
+assign d1_out = rd_en && sampled_in_d1 ;//&& (data_out == d1_in);
+
+always_ff @( posedge clk ) begin
+    if(rst) sampled_out_d1 <= 1'b0;
+    else sampled_out_d1 <= (d1_out || sampled_out_d1);
+end
+
+assign d2_out = rd_en && sampled_in_d2 ;//&& (data_out == d2_in);
+
+always_ff @( posedge clk ) begin
+    if(rst) sampled_out_d2 <= 1'b0;
+    else sampled_out_d2 <= (d2_out || sampled_out_d2);
+end
+
+assert property (@(posedge clk) disable iff(rst) sampled_in_d1 && sampled_in_d2 && !sampled_out_d1 |-> !sampled_out_d2);
+//assert property (@(posedge clk) disable iff(rst) sampled_out_d2 |-> sampled_out_d1);
+
+logic incr_count, dcr_count;
+logic [7:0] d_in;
+logic sample_in, sample_symb, sample_out, sampled_in, sampled_out;
+logic [3:0] count;
+
+assume property (@(posedge clk) disable iff(rst) $stable(d_in));
+//assume property (@(posedge clk) disable iff(rst) $rose(sampled_in)|-> sample_symb);
+
+assign incr_count = wr_en && !sampled_in && !full;
+assign dcr_count = rd_en && !sampled_out && !empty;
+
+always_ff @( posedge clk ) begin 
+    if(rst) count <= '0;
+    else count <= count + incr_count -dcr_count;
+end
+
+//assign sample_in = (data_in == d_in) && incr_count && sample_symb;
+
+
+always_ff @( posedge clk ) begin 
+    if(rst) sampled_in <= 1'b0;
+    else if((data_in == d_in) && incr_count && sample_symb) sampled_in <= 1'b1;
+end
+
+assign sample_out = sampled_in && dcr_count && (count == 1);
+
+always_ff @( posedge clk ) begin 
+    if(rst) sampled_out <= 1'b0;
+    else if(sample_out) sampled_out<= 1'b1;
+end
+
+assume property(@(posedge clk) disable iff(rst) sample_out |=> $stable(rd_en));
+
+assert property (@(posedge clk) disable iff(rst) sample_out |->  ##1 (data_out == d_in));
+//assert property (@(posedge clk) disable iff(rst) sampled_in |-> ##[0:$] sampled_out);
+	
+
 
 
 endmodule
