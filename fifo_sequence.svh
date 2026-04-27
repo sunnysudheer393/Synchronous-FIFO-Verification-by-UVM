@@ -21,7 +21,7 @@ class fifo_sequence extends uvm_sequence #(fifo_seq_item);//we'll have seq item 
 
     virtual task body();
       this.set_response_queue_depth(0);
-      repeat(10) begin
+        repeat(100) begin
             req = fifo_seq_item::type_id::create("req");
             start_item(req);
             req.randomize();
@@ -99,13 +99,14 @@ class fifo_write_then_read_sequence extends uvm_sequence #(fifo_seq_item);
     endfunction
 
     virtual task body();
-       // repeat(10) begin
+       repeat(10) begin
           	req = fifo_seq_item::type_id::create("req");
             start_item(req);
             assert(req.randomize() with {req.wr_en==1;req.rd_en==0;});
             finish_item(req);
-
-            repeat(8) begin
+       end
+        
+       repeat(8) begin
             req = fifo_seq_item::type_id::create("req");
             start_item(req);
             assert(req.randomize() with {req.wr_en==1;req.rd_en==1;});
