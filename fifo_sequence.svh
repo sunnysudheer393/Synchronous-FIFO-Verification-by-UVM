@@ -3,8 +3,8 @@
 //.................R E A D     S E Q U E N C E................//
 //.................W R I T E   R E A D   BACK TO BACK    S E Q U E N C E................//
 //.................W R I T E   THEN    R E A D    S E Q U E N C E.................//
-
-
+//..................OVERFLOW SEQUENCE....................//
+//....................UNDERFLOW SEQUENCE......................//
 
 
 //................R A N D O M    S E Q U E N C E.............//
@@ -113,4 +113,44 @@ class fifo_write_then_read_sequence extends uvm_sequence #(fifo_seq_item);
             finish_item(req);
         end
     endtask
+endclass
+
+//..................OVERFLOW SEQUENCE....................//
+class fifo_overflow_seq extends uvm_sequence #(fifo_seq_item);
+  `uvm_object_utils(fifo_overflow_seq)
+
+  parameter DEPTH = 16;
+
+  task body();
+    fifo_seq_item item;
+    // Write DEPTH + extra to trigger overflow condition
+    repeat(DEPTH + 4) begin
+      item = fifo_seq_item::type_id::create("item");
+      start_item(item);
+      if (!item.randomize() with {
+        wr_en == 1; rd_en == 0;
+        //delay_cycles == 0;
+      }) `uvm_fatal("RAND_FAIL", "Randomization failed")
+      finish_item(item);
+    end
+  endtask
+endclass
+
+//....................UNDERFLOW SEQUENCE......................//
+class fifo_underflow_seq extends uvm_sequence #(fifo_seq_item);
+  `uvm_object_utils(fifo_seq_item)
+
+  task body();
+    fifo_seq_item item;
+    // Read from empty FIFO
+    repeat(8) begin
+      item = fifo_seq_item::type_id::create("item");
+      start_item(item);
+      if (!item.randomize() with {
+        wr_en == 0; rd_en == 1;
+        //delay_cycles == 0;
+      }) `uvm_fatal("RAND_FAIL", "Randomization failed")
+      finish_item(item);
+    end
+  endtask
 endclass
